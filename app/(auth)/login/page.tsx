@@ -23,8 +23,8 @@ export default function LoginPage() {
           <div className="w-16 h-16 rounded-2xl bg-[#E85D04] text-white flex items-center justify-center mx-auto mb-4 shadow-lg">
             <BookOpen size={32} />
           </div>
-          <h1 className="text-xl font-bold text-[#2D2D2D]">犟爸读书会</h1>
-          <p className="text-sm text-gray-500 mt-1">在远远的背后带领</p>
+          <h1 className="text-xl font-bold text-[#2D2D2D]">犟爸书房</h1>
+          <p className="text-sm text-gray-500 mt-1">读书 · 阅己</p>
         </div>
       </div>
 

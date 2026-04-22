@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "犟爸读书会",
-  description: "在远远的背后带领——读书，照见自己；情绪，滋养关系。",
+  title: "犟爸书房",
+  description: "读书，阅己 —— 在远远的背后带领。",
 };
 
 export default function RootLayout({

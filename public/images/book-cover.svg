@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 420">
+  <defs>
+    <linearGradient id="bookBg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#E85D04;stop-opacity:0.15"/>
+      <stop offset="100%" style="stop-color:#C9A961;stop-opacity:0.1"/>
+    </linearGradient>
+    <linearGradient id="goldLine" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#C9A961"/>
+      <stop offset="100%" style="stop-color:#D4AF37"/>
+    </linearGradient>
+  </defs>
+  <rect width="300" height="420" fill="#FAF7F2"/>
+  <rect x="20" y="20" width="260" height="380" fill="url(#bookBg)" rx="4"/>
+  <rect x="20" y="20" width="260" height="380" fill="none" stroke="url(#goldLine)" stroke-width="1.5" rx="4"/>
+  <rect x="30" y="30" width="240" height="360" fill="none" stroke="url(#goldLine)" stroke-width="0.5" rx="2"/>
+  <text x="150" y="120" font-family="Noto Serif SC, serif" font-size="32" font-weight="700" fill="#2D2D2D" text-anchor="middle">在远远的</text>
+  <text x="150" y="170" font-family="Noto Serif SC, serif" font-size="32" font-weight="700" fill="#2D2D2D" text-anchor="middle">背后带领</text>
+  <line x1="80" y1="210" x2="220" y2="210" stroke="url(#goldLine)" stroke-width="1.5"/>
+  <text x="150" y="250" font-family="Noto Serif SC, serif" font-size="14" fill="#666" text-anchor="middle">PET父母效能训练的中国实践</text>
+  <text x="150" y="360" font-family="Noto Serif SC, serif" font-size="18" fill="#C9A961" text-anchor="middle">安心 著</text>
+  <circle cx="150" cy="80" r="3" fill="#C9A961"/>
+  <circle cx="150" cy="390" r="3" fill="#C9A961"/>
+</svg>

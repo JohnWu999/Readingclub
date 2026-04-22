@@ -10,7 +10,7 @@ const currentBook = {
   title: "在远远的背后带领",
   subtitle: "PET父母效能训练的中国实践",
   author: "安心",
-  cover: "https://images.unsplash.com/photo-1544947950-fa07a98d237f?w=400&h=600&fit=crop",
+  cover: "/images/book-cover.svg",
   progress: 35,
   totalChapters: 15,
   completedChapters: 5,
@@ -21,13 +21,13 @@ const pastBooks = [
     id: "2",
     title: "父母的语言",
     author: "李珍·海克",
-    cover: "https://images.unsplash.com/photo-1512820790803-83ca734da794?w=300&h=400&fit=crop",
+    cover: "/images/book-cover-2.svg",
   },
   {
     id: "3",
     title: "正面管教",
     author: "简·尼尔森",
-    cover: "https://images.unsplash.com/photo-1497633762265-9d179a990aa6?w=300&h=400&fit=crop",
+    cover: "/images/book-cover-3.svg",
   },
 ];
 
@@ -43,8 +43,8 @@ export default function HomePage() {
     <main className="px-5 pt-6 pb-8">
       {/* 顶部标题 */}
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-[#2D2D2D]">犟爸读书会</h1>
-        <p className="text-sm text-gray-500 mt-1">在远远的背后带领</p>
+        <h1 className="text-2xl font-bold text-[#2D2D2D]">犟爸书房</h1>
+        <p className="text-sm text-gray-500 mt-1">读书 · 阅己</p>
       </div>
 
       {/* 快捷动作 */}
