@@ -17,10 +17,10 @@ export default function MePage() {
       <div className="bg-white rounded-2xl p-5 border border-[#C9A961]/15 mb-6">
         <div className="flex items-center gap-3">
           <div className="w-16 h-16 rounded-full bg-gradient-to-br from-[#E85D04] to-[#C9A961] flex items-center justify-center text-white text-xl font-bold">
-            犁
+            犟
           </div>
           <div>
-            <h1 className="text-lg font-bold text-[#2D2D2D]">犁爸会员</h1>
+            <h1 className="text-lg font-bold text-[#2D2D2D]">犟爸会员</h1>
             <p className="text-xs text-gray-400 mt-0.5">138****8888</p>
           </div>
         </div>
