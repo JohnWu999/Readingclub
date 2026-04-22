@@ -25,5 +25,7 @@ export function generateCode(): string {
 }
 
 export function setAuthCookie(token: string): string {
-  return `token=${token}; Path=/; HttpOnly; Secure; SameSite=Strict; Max-Age=2592000`
+  const isProd = process.env.NODE_ENV === 'production'
+  const secureFlag = isProd ? 'Secure; ' : ''
+  return `token=${token}; Path=/; HttpOnly; ${secureFlag}SameSite=Strict; Max-Age=2592000`
 }
