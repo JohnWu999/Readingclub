@@ -1,0 +1,190 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  MEMBER
+  ADMIN
+}
+
+enum AudioType {
+  HUMAN
+  AI_CLONE
+}
+
+enum CheckInType {
+  READING
+  EMOTION
+  FAMILY
+}
+
+enum HealingCategory {
+  PARENT
+  CHILD
+  FAMILY
+}
+
+model User {
+  id            String          @id @default(uuid())
+  phone         String          @unique
+  nickname      String?
+  avatar        String?
+  role          Role            @default(MEMBER)
+  isActive      Boolean         @default(true)
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+
+  checkIns      CheckIn[]
+  comments      Comment[]
+  audioProgress AudioProgress[]
+  journals      EmotionJournal[]
+  familyMembers FamilyMember[]
+}
+
+model Book {
+  id           String    @id @default(uuid())
+  title        String
+  subtitle     String?
+  author       String
+  coverImage   String?
+  description  String?   @db.Text
+  readingGuide String?   @db.Text
+  cycleStart   DateTime?
+  cycleEnd     DateTime?
+  isActive     Boolean   @default(false)
+  isPublished  Boolean   @default(false)
+  order        Int       @default(0)
+  createdAt    DateTime  @default(now())
+
+  chapters     Chapter[]
+  materials    Material[]
+}
+
+model Chapter {
+  id        String   @id @default(uuid())
+  bookId    String
+  title     String
+  order     Int
+  summary   String?  @db.Text
+  createdAt DateTime @default(now())
+
+  book      Book      @relation(fields: [bookId], references: [id], onDelete: Cascade)
+  audioFiles AudioFile[]
+  materials  Material[]
+  comments   Comment[]
+}
+
+model AudioFile {
+  id        String    @id @default(uuid())
+  chapterId String?
+  healingId String?
+  title     String
+  url       String
+  duration  Int
+  type      AudioType @default(HUMAN)
+  order     Int       @default(0)
+  createdAt DateTime  @default(now())
+
+  chapter   Chapter?  @relation(fields: [chapterId], references: [id], onDelete: Cascade)
+  progress  AudioProgress[]
+}
+
+model AudioProgress {
+  id          String    @id @default(uuid())
+  userId      String
+  audioId     String
+  position    Int       @default(0)
+  isCompleted Boolean   @default(false)
+  updatedAt   DateTime  @updatedAt
+
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  audio       AudioFile @relation(fields: [audioId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, audioId])
+}
+
+model Comment {
+  id        String   @id @default(uuid())
+  userId    String
+  chapterId String?
+  content   String   @db.Text
+  images    String[]
+  parentId  String?
+  isPinned  Boolean  @default(false)
+  isEssence Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  chapter   Chapter?  @relation(fields: [chapterId], references: [id], onDelete: Cascade)
+  parent    Comment?  @relation("Reply", fields: [parentId], references: [id])
+  replies   Comment[] @relation("Reply")
+}
+
+model CheckIn {
+  id        String      @id @default(uuid())
+  userId    String
+  type      CheckInType @default(READING)
+  chapterId String?
+  content   String?     @db.Text
+  createdAt DateTime    @default(now())
+
+  user      User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, type, createdAt])
+}
+
+model EmotionJournal {
+  id         String   @id @default(uuid())
+  userId     String
+  emotion    String
+  trigger    String?  @db.Text
+  action     String?  @db.Text
+  reflection String?  @db.Text
+  createdAt  DateTime @default(now())
+
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model HealingContent {
+  id          String          @id @default(uuid())
+  category    HealingCategory
+  type        String
+  title       String
+  description String?         @db.Text
+  coverImage  String?
+  order       Int             @default(0)
+  isActive    Boolean         @default(true)
+  createdAt   DateTime        @default(now())
+
+  audioFiles  AudioFile[]
+}
+
+model FamilyMember {
+  id        String   @id @default(uuid())
+  userId    String
+  name      String
+  relation  String
+  avatar    String?
+  createdAt DateTime @default(now())
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Material {
+  id        String   @id @default(uuid())
+  bookId    String?
+  chapterId String?
+  title     String
+  url       String
+  type      String   @default("pdf")
+  order     Int      @default(0)
+  createdAt DateTime @default(now())
+
+  book      Book?    @relation(fields: [bookId], references: [id], onDelete: Cascade)
+  chapter   Chapter? @relation(fields: [chapterId], references: [id], onDelete: Cascade)
+}
