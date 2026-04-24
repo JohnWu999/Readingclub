@@ -1,4 +1,5 @@
 import BottomNav from "@/components/bottom-nav";
+import RouteGuard from "@/components/route-guard";
 
 export default function MainLayout({
   children,
@@ -7,7 +8,9 @@ export default function MainLayout({
 }) {
   return (
     <div className="max-w-md mx-auto min-h-screen bg-[#FAF7F2] relative pb-20">
-      {children}
+      <RouteGuard>
+        {children}
+      </RouteGuard>
       <BottomNav />
     </div>
   );

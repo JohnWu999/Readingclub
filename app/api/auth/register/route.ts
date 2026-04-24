@@ -39,8 +39,10 @@ export async function POST(req: NextRequest) {
       { user: { id: user.id, phone: user.phone, nickname: user.nickname, role: user.role } },
       { status: 201, headers: { "Set-Cookie": setAuthCookie(token) } }
     );
-  } catch (error) {
-    console.error(error);
-    return NextResponse.json({ error: "注册失败" }, { status: 500 });
+  } catch (error: any) {
+    console.error("Register error:", error);
+    console.error("Error message:", error?.message);
+    console.error("Error stack:", error?.stack);
+    return NextResponse.json({ error: "注册失败: " + (error?.message || "未知错误") }, { status: 500 });
   }
 }

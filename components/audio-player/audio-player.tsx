@@ -7,7 +7,9 @@ interface AudioChapter {
   id: string;
   title: string;
   duration: number; // seconds
-  type: "HUMAN" | "AI_CLONE";
+  type: string;
+  chapterTitle?: string;
+  url?: string;
 }
 
 interface AudioPlayerProps {

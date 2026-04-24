@@ -5,13 +5,26 @@ export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
     const chapterId = searchParams.get("chapterId");
+    const bookId = searchParams.get("bookId");
 
-    if (!chapterId) {
-      return NextResponse.json({ error: "缺少 chapterId" }, { status: 400 });
+    let chapterIds: string[] = [];
+
+    if (chapterId) {
+      chapterIds = [chapterId];
+    } else if (bookId) {
+      const chapters = await prisma.chapter.findMany({
+        where: { bookId },
+        select: { id: true },
+      });
+      chapterIds = chapters.map((c) => c.id);
+    }
+
+    if (chapterIds.length === 0) {
+      return NextResponse.json({ comments: [] });
     }
 
     const comments = await prisma.comment.findMany({
-      where: { chapterId, parentId: null },
+      where: { chapterId: { in: chapterIds }, parentId: null },
       orderBy: [{ isPinned: "desc" }, { createdAt: "desc" }],
       include: {
         user: { select: { id: true, nickname: true, avatar: true } },
