@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Image from "next/image";
-import { BookOpen, MessageSquare, ChevronRight } from "lucide-react";
+import { BookOpen, MessageSquare, ChevronRight, Sparkles, Baby } from "lucide-react";
 import Link from "next/link";
 
 interface Book {
@@ -53,10 +53,10 @@ export default function HomePage() {
       </div>
 
       {/* 快捷动作 */}
-      <div className="flex gap-4 mb-8">
+      <div className="flex gap-3 mb-8 overflow-x-auto pb-1">
         <Link
           href="/coach"
-          className="bg-[#E85D04] text-white flex items-center gap-2 px-5 py-3 rounded-xl text-sm font-medium shadow-sm flex-1 justify-center"
+          className="bg-[#E85D04] text-white flex items-center gap-2 px-5 py-3 rounded-xl text-sm font-medium shadow-sm flex-1 justify-center whitespace-nowrap"
         >
           <MessageSquare size={16} />
           问安心教练
@@ -64,12 +64,26 @@ export default function HomePage() {
         {currentBook && (
           <Link
             href={`/book/${currentBook.id}`}
-            className="bg-white border border-[#C9A961]/30 text-[#2D2D2D] flex items-center gap-2 px-5 py-3 rounded-xl text-sm font-medium"
+            className="bg-white border border-[#C9A961]/30 text-[#2D2D2D] flex items-center gap-2 px-5 py-3 rounded-xl text-sm font-medium whitespace-nowrap"
           >
             <BookOpen size={16} className="text-[#C9A961]" />
             看书
           </Link>
         )}
+        <Link
+          href="/reading-together"
+          className="bg-white border border-[#E85D04]/30 text-[#E85D04] flex items-center gap-2 px-5 py-3 rounded-xl text-sm font-medium whitespace-nowrap"
+        >
+          <Sparkles size={16} />
+          AI共读
+        </Link>
+        <Link
+          href="/child"
+          className="bg-white border border-[#C9A961]/30 text-[#C9A961] flex items-center gap-2 px-5 py-3 rounded-xl text-sm font-medium whitespace-nowrap"
+        >
+          <Baby size={16} />
+          孩子
+        </Link>
       </div>
 
       {/* 当前书目 */}
