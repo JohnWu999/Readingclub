@@ -1,61 +1,32 @@
 /**
- * LLM Client for Reading Club
- * 支持自由切换 MiniMax / Kimi / OpenRouter
+ * LLM Client for Reading Club — MiniMax 专用
  *
- * 调用方式:
+ * 模型: MiniMax-M2.7-highspeed (带推理能力，适合深度思考场景)
+ *
+ * 使用:
  *   import { askLLM } from '@/lib/llm-client'
- *   const reply = await askLLM({ prompt: "...", provider: "minimax" })
- *
- * 模型对比:
- *   - minimax: MiniMax-M2.7-highspeed (带 <think> 推理过程，适合深度思考)
- *   - kimi:    kimi-k2.5 (通用对话，需 OpenRouter 或 moonshot 普通 key)
- *   - openrouter: 通过 OpenRouter 调用任意模型 (万能 fallback)
+ *   const reply = await askLLM({ prompt: "..." })
  */
-
-export type LLMProvider = "minimax" | "kimi" | "openrouter";
 
 interface AskOptions {
   prompt: string;
-  provider?: LLMProvider;
   systemPrompt?: string;
   maxTokens?: number;
   temperature?: number;
-  /** OpenRouter 模型名，仅当 provider="openrouter" 时有效 */
-  openrouterModel?: string;
 }
 
-const CONFIG = {
-  minimax: {
-    baseURL: process.env.MINIMAX_CN_BASE_URL || "https://api.minimaxi.com/v1",
-    apiKey: process.env.MINIMAX_CN_API_KEY || "",
-    model: "MiniMax-M2.7-highspeed",
-  },
-  kimi: {
-    baseURL: process.env.KIMI_BASE_URL || "https://api.moonshot.cn/v1",
-    apiKey: process.env.KIMI_API_KEY || "",
-    model: "kimi-k2.5",
-  },
-  openrouter: {
-    baseURL: "https://openrouter.ai/api/v1",
-    apiKey: process.env.OPENROUTER_API_KEY || "",
-    model: "moonshotai/kimi-k2.5", // 默认调用 Kimi k2.5，可替换为任意模型
-  },
-};
+const BASE_URL = process.env.MINIMAX_CN_BASE_URL || "https://api.minimaxi.com/v1";
+const API_KEY = process.env.MINIMAX_CN_API_KEY || "";
+const MODEL = "MiniMax-M2.7-highspeed";
 
 export async function askLLM({
   prompt,
-  provider = "minimax",
   systemPrompt = "你是一个温暖有同理心的阅读陪伴助手，擅长用引导式对话激发孩子的阅读兴趣。",
   maxTokens = 800,
   temperature = 0.7,
-  openrouterModel,
 }: AskOptions): Promise<string> {
-  const cfg = { ...CONFIG[provider] };
-  if (!cfg.apiKey) {
-    throw new Error(`Missing API key for ${provider}. Check .env config.`);
-  }
-  if (provider === "openrouter" && openrouterModel) {
-    cfg.model = openrouterModel;
+  if (!API_KEY) {
+    throw new Error("Missing MINIMAX_CN_API_KEY. Check .env config.");
   }
 
   const messages: Array<{ role: string; content: string }> = [];
@@ -64,17 +35,14 @@ export async function askLLM({
   }
   messages.push({ role: "user", content: prompt });
 
-  const resp = await fetch(`${cfg.baseURL}/chat/completions`, {
+  const resp = await fetch(`${BASE_URL}/chat/completions`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      Authorization: `Bearer ${cfg.apiKey}`,
-      ...(provider === "openrouter"
-        ? { "HTTP-Referer": process.env.APP_URL || "", "X-Title": "犇爸书房" }
-        : {}),
+      Authorization: `Bearer ${API_KEY}`,
     },
     body: JSON.stringify({
-      model: cfg.model,
+      model: MODEL,
       messages,
       max_tokens: maxTokens,
       temperature,
@@ -83,7 +51,7 @@ export async function askLLM({
 
   if (!resp.ok) {
     const err = await resp.text();
-    throw new Error(`${provider} API error (${resp.status}): ${err}`);
+    throw new Error(`MiniMax API error (${resp.status}): ${err}`);
   }
 
   const data = await resp.json();
@@ -96,32 +64,22 @@ export async function askLLM({
 /** Streaming version for real-time typing effect */
 export async function* askLLMStream({
   prompt,
-  provider = "minimax",
   systemPrompt = "你是一个温暖有同理心的阅读陪伴助手。",
   maxTokens = 800,
   temperature = 0.7,
-  openrouterModel,
 }: AskOptions): AsyncGenerator<string> {
-  const cfg = { ...CONFIG[provider] };
-  if (provider === "openrouter" && openrouterModel) {
-    cfg.model = openrouterModel;
-  }
-
   const messages: Array<{ role: string; content: string }> = [];
   if (systemPrompt) messages.push({ role: "system", content: systemPrompt });
   messages.push({ role: "user", content: prompt });
 
-  const resp = await fetch(`${cfg.baseURL}/chat/completions`, {
+  const resp = await fetch(`${BASE_URL}/chat/completions`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      Authorization: `Bearer ${cfg.apiKey}`,
-      ...(provider === "openrouter"
-        ? { "HTTP-Referer": process.env.APP_URL || "", "X-Title": "犇爸书房" }
-        : {}),
+      Authorization: `Bearer ${API_KEY}`,
     },
     body: JSON.stringify({
-      model: cfg.model,
+      model: MODEL,
       messages,
       max_tokens: maxTokens,
       temperature,
@@ -131,7 +89,7 @@ export async function* askLLMStream({
 
   if (!resp.ok) {
     const err = await resp.text();
-    throw new Error(`${provider} API error (${resp.status}): ${err}`);
+    throw new Error(`MiniMax API error (${resp.status}): ${err}`);
   }
 
   const reader = resp.body?.getReader();
