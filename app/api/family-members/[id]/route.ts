@@ -4,7 +4,7 @@ import { prisma } from "@/lib/prisma";
 // DELETE /api/family-members/[id] - 删除孩子信息
 export async function DELETE(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const authHeader = req.headers.get("x-user-id");
@@ -15,7 +15,7 @@ export async function DELETE(
       return NextResponse.json({ error: "未登录" }, { status: 401 });
     }
 
-    const { id } = params;
+    const { id } = await params;
 
     // 确认这是当前用户的孩子
     const member = await prisma.familyMember.findFirst({
@@ -40,7 +40,7 @@ export async function DELETE(
 // PATCH /api/family-members/[id] - 更新孩子信息
 export async function PATCH(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const authHeader = req.headers.get("x-user-id");
@@ -51,7 +51,7 @@ export async function PATCH(
       return NextResponse.json({ error: "未登录" }, { status: 401 });
     }
 
-    const { id } = params;
+    const { id } = await params;
     const body = await req.json();
 
     const member = await prisma.familyMember.findFirst({
