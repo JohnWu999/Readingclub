@@ -140,32 +140,40 @@ ${userContext}
 `;
 
     // 4. 调用 API
-    const apiKey = process.env.KIMI_API_KEY || process.env.OPENROUTER_API_KEY;
-    const baseUrl = process.env.KIMI_BASE_URL || "https://api.moonshot.cn/v1";
+    const apiKey = process.env.MINIMAX_API_KEY || process.env.KIMI_API_KEY || process.env.OPENROUTER_API_KEY;
+    const baseUrl = process.env.MINIMAX_BASE_URL || process.env.KIMI_BASE_URL || "https://api.minimax.chat/v1";
     
     let answer: string;
     
     if (apiKey) {
-      const response = await fetch(`${baseUrl}/chat/completions`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${apiKey}`,
-        },
-        body: JSON.stringify({
-          model: process.env.KIMI_MODEL || "moonshot-v1-8k",
-          messages: [{ role: "user", content: prompt }],
-          temperature: 0.8,
-          max_tokens: 600,
-        }),
-      });
+      try {
+        const response = await fetch(`${baseUrl}/chat/completions`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${apiKey}`,
+          },
+          body: JSON.stringify({
+            model: process.env.MINIMAX_MODEL || process.env.KIMI_MODEL || "MiniMax-M2.5",
+            messages: [{ role: "user", content: prompt }],
+            temperature: 0.8,
+            max_tokens: 600,
+          }),
+        });
 
-      if (response.ok) {
-        const data = await response.json();
-        answer = data.choices?.[0]?.message?.content || generateFallbackAnswer(question, primaryToolKey, toolCard);
-      } else {
-        const errText = await response.text();
-        console.error("Kimi API error:", response.status, errText);
+        if (response.ok) {
+          const data = await response.json();
+          let content = data.choices?.[0]?.message?.content || "";
+          // 清理 MiniMax thinking 标签
+          content = content.replace(/<think>[\s\S]*?<\/think>/g, "").trim();
+          answer = content || generateFallbackAnswer(question, primaryToolKey, toolCard);
+        } else {
+          const errText = await response.text();
+          console.error("AI API error:", response.status, errText);
+          answer = generateFallbackAnswer(question, primaryToolKey, toolCard);
+        }
+      } catch (apiErr) {
+        console.error("AI API call failed:", apiErr);
         answer = generateFallbackAnswer(question, primaryToolKey, toolCard);
       }
     } else {
