@@ -9,8 +9,8 @@ export default function RouteGuard({ children }: { children: React.ReactNode }) 
   const [checking, setChecking] = useState(true);
 
   useEffect(() => {
-    // onboarding、login、reading-together、child 页面不需要跳转
-    if (pathname === "/onboarding" || pathname === "/login" || pathname === "/reading-together" || pathname === "/child") {
+    // onboarding、login、reading-together、child、healing 页面不需要跳转
+    if (pathname === "/onboarding" || pathname === "/login" || pathname === "/reading-together" || pathname === "/child" || pathname === "/healing") {
       setChecking(false);
       return;
     }
