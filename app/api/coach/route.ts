@@ -141,18 +141,19 @@ ${userContext}
 
     // 4. 调用 API
     const apiKey = process.env.KIMI_API_KEY || process.env.OPENROUTER_API_KEY;
+    const baseUrl = process.env.KIMI_BASE_URL || "https://api.moonshot.cn/v1";
     
     let answer: string;
     
     if (apiKey) {
-      const response = await fetch("https://api.moonshot.cn/v1/chat/completions", {
+      const response = await fetch(`${baseUrl}/chat/completions`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${apiKey}`,
         },
         body: JSON.stringify({
-          model: "moonshot-v1-8k",
+          model: process.env.KIMI_MODEL || "moonshot-v1-8k",
           messages: [{ role: "user", content: prompt }],
           temperature: 0.8,
           max_tokens: 600,
