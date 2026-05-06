@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import {
   BookOpen,
   MessageCircle,
@@ -11,6 +11,9 @@ import {
   Zap,
   Heart,
   BrainCircuit,
+  Send,
+  X,
+  Loader2,
 } from "lucide-react";
 import Link from "next/link";
 
@@ -22,7 +25,6 @@ const readingModes = [
     desc: "安静翻阅，享受独处时光。有问题随时唤出 AI。",
     icon: BookOpen,
     color: "#2D2D2D",
-    bgColor: "bg-white",
     active: false,
   },
   {
@@ -32,7 +34,6 @@ const readingModes = [
     desc: "AI 也在读这本书，页边有批注，随时可讨论。",
     icon: MessageCircle,
     color: "#E85D04",
-    bgColor: "bg-[#E85D04]/5",
     active: true,
   },
   {
@@ -42,13 +43,12 @@ const readingModes = [
     desc: "AI 提前读完，生成精华地图 + 提问清单，降低门槛。",
     icon: Sparkles,
     color: "#C9A961",
-    bgColor: "bg-[#C9A961]/5",
     active: false,
   },
 ];
 
 const aiCompanionTraits = [
-  { icon: Heart, label: "共情", desc: "理解你的育儿焦虑" },
+  { icon: Heart, label: "共情", desc: "理解你的育儻焦虑" },
   { icon: BrainCircuit, label: "记忆", desc: "记住你的阅读 DNA" },
   { icon: Zap, label: "轻推", desc: "不直给答案，引导思考" },
   { icon: MessageCircle, label: "对话", desc: "模拟孩子角色练习" },
@@ -72,9 +72,83 @@ const demoAnnotations = [
   },
 ];
 
+interface ChatMessage {
+  role: "user" | "assistant";
+  content: string;
+  toolCard?: { name: string; page: string };
+}
+
 export default function ReadingTogetherPage() {
   const [selectedMode, setSelectedMode] = useState("together");
-  const [showDemo, setShowDemo] = useState(false);
+  const [chatOpen, setChatOpen] = useState(false);
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [input, setInput] = useState("");
+  const [loading, setLoading] = useState(false);
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+    }
+  }, [messages, chatOpen]);
+
+  const handleSend = async () => {
+    if (!input.trim() || loading) return;
+
+    const userMsg: ChatMessage = { role: "user", content: input.trim() };
+    setMessages((prev) => [...prev, userMsg]);
+    setInput("");
+    setLoading(true);
+
+    try {
+      const res = await fetch("/api/coach", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ question: userMsg.content }),
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        const assistantMsg: ChatMessage = {
+          role: "assistant",
+          content: data.answer || "抱歉，我暂时无法回复。",
+          toolCard: data.toolCard
+            ? { name: data.toolCard.name, page: data.toolCard.page }
+            : undefined,
+        };
+        setMessages((prev) => [...prev, assistantMsg]);
+      } else {
+        setMessages((prev) => [
+          ...prev,
+          { role: "assistant", content: "服务暂时不可用，请稍后重试。" },
+        ]);
+      }
+    } catch {
+      setMessages((prev) => [
+        ...prev,
+        { role: "assistant", content: "网络异常，请检查网络后重试。" },
+      ]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      handleSend();
+    }
+  };
+
+  const startChatFromAnnotation = (note: string) => {
+    setChatOpen(true);
+    setMessages([
+      {
+        role: "assistant",
+        content: note + "\n\n你想跟我讨论这一段吗？或者有什么其他问题想聊？",
+      },
+    ]);
+  };
 
   return (
     <main className="min-h-screen bg-[#FAF7F2] px-5 pt-8 pb-12">
@@ -89,16 +163,12 @@ export default function ReadingTogetherPage() {
           </Link>
           <h1 className="text-xl font-bold text-[#2D2D2D]">AI 共读</h1>
         </div>
-        <p className="text-sm text-gray-500 ml-10">
-          不是问答，是和你一起读书
-        </p>
+        <p className="text-sm text-gray-500 ml-10">不是问答，是和你一起读书</p>
       </div>
 
       {/* 三种阅读模式 */}
-      <section className="mb-10">
-        <h2 className="text-base font-bold text-[#2D2D2D] mb-4">
-          选择阅读方式
-        </h2>
+      <section className="mb-8">
+        <h2 className="text-base font-bold text-[#2D2D2D] mb-4">选择阅读方式</h2>
         <div className="space-y-3">
           {readingModes.map((mode) => {
             const Icon = mode.icon;
@@ -106,11 +176,7 @@ export default function ReadingTogetherPage() {
             return (
               <button
                 key={mode.id}
-                onClick={() => {
-                  setSelectedMode(mode.id);
-                  if (mode.id === "together") setShowDemo(true);
-                  else setShowDemo(false);
-                }}
+                onClick={() => setSelectedMode(mode.id)}
                 className={`w-full text-left rounded-2xl p-4 border transition-all ${
                   isSelected
                     ? "border-[#E85D04]/40 bg-white shadow-sm"
@@ -132,9 +198,7 @@ export default function ReadingTogetherPage() {
                     <div className="flex items-center gap-2">
                       <h3
                         className="font-bold text-[15px]"
-                        style={{
-                          color: isSelected ? mode.color : "#2D2D2D",
-                        }}
+                        style={{ color: isSelected ? mode.color : "#2D2D2D" }}
                       >
                         {mode.title}
                       </h3>
@@ -158,15 +222,13 @@ export default function ReadingTogetherPage() {
         </div>
       </section>
 
-      {/* AI 伴读演示 */}
+      {/* AI 伴读批注 + 聊天入口 */}
       {selectedMode === "together" && (
-        <section className="mb-10">
+        <section className="mb-8">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-base font-bold text-[#2D2D2D]">
-              AI 伴读体验
-            </h2>
+            <h2 className="text-base font-bold text-[#2D2D2D]">AI 伴读</h2>
             <span className="text-[10px] px-2 py-1 rounded-full bg-[#E85D04]/10 text-[#E85D04]">
-              演示
+              实时对话
             </span>
           </div>
 
@@ -187,9 +249,7 @@ export default function ReadingTogetherPage() {
                     <span className="text-[10px] px-2 py-0.5 rounded bg-gray-100 text-gray-500">
                       {anno.page}
                     </span>
-                    <p className="text-xs text-[#C9A961] italic">
-                      {anno.quote}
-                    </p>
+                    <p className="text-xs text-[#C9A961] italic">{anno.quote}</p>
                   </div>
                   <div className="flex gap-2">
                     <div className="w-6 h-6 rounded-full bg-gradient-to-br from-[#E85D04] to-[#C9A961] flex items-center justify-center flex-shrink-0">
@@ -201,15 +261,36 @@ export default function ReadingTogetherPage() {
                       </p>
                     </div>
                   </div>
+                  <button
+                    onClick={() => startChatFromAnnotation(anno.aiNote)}
+                    className="mt-2 text-[11px] text-[#E85D04] font-medium flex items-center gap-1 ml-8"
+                  >
+                    <MessageCircle size={12} />
+                    讨论这段
+                  </button>
                 </div>
               ))}
             </div>
 
             {/* 底部操作 */}
             <div className="px-4 py-3 border-t border-gray-100">
-              <button className="w-full py-2.5 rounded-xl bg-[#E85D04] text-white text-sm font-medium flex items-center justify-center gap-2">
+              <button
+                onClick={() => {
+                  setChatOpen(true);
+                  if (messages.length === 0) {
+                    setMessages([
+                      {
+                        role: "assistant",
+                        content:
+                          "你好！我是安心，今天我们一起读《在远远的背后带领》。\n\n你可以问我任何问题，或者告诉我你最近在育儻中遇到的困扰。",
+                      },
+                    ]);
+                  }
+                }}
+                className="w-full py-2.5 rounded-xl bg-[#E85D04] text-white text-sm font-medium flex items-center justify-center gap-2"
+              >
                 <MessageCircle size={16} />
-                继续和 AI 讨论这一章
+                开始和 AI 讨论
               </button>
             </div>
           </div>
@@ -217,14 +298,11 @@ export default function ReadingTogetherPage() {
       )}
 
       {/* AI 分身介绍 */}
-      <section className="mb-10">
-        <h2 className="text-base font-bold text-[#2D2D2D] mb-4">
-          你的 AI 阅读分身
-        </h2>
+      <section className="mb-8">
+        <h2 className="text-base font-bold text-[#2D2D2D] mb-4">你的 AI 阅读分身</h2>
         <p className="text-xs text-gray-500 mb-4 leading-relaxed">
           不是通用 AI，是专属于你的阅读搭档。它会记住你的偏好、卡壳的地方、最敏感的话题。
         </p>
-
         <div className="grid grid-cols-2 gap-3">
           {aiCompanionTraits.map((trait, i) => {
             const Icon = trait.icon;
@@ -234,9 +312,7 @@ export default function ReadingTogetherPage() {
                 className="bg-white rounded-xl p-4 border border-[#C9A961]/10"
               >
                 <Icon size={18} className="text-[#E85D04] mb-2" />
-                <h3 className="text-sm font-bold text-[#2D2D2D]">
-                  {trait.label}
-                </h3>
+                <h3 className="text-sm font-bold text-[#2D2D2D]">{trait.label}</h3>
                 <p className="text-[11px] text-gray-500 mt-1">{trait.desc}</p>
               </div>
             );
@@ -245,19 +321,17 @@ export default function ReadingTogetherPage() {
       </section>
 
       {/* 角色扮演 */}
-      <section className="mb-10">
+      <section className="mb-8">
         <div className="bg-gradient-to-br from-[#E85D04]/5 to-[#C9A961]/10 rounded-2xl p-5 border border-[#C9A961]/15">
           <div className="flex items-center gap-2 mb-3">
             <Sparkles size={18} className="text-[#E85D04]" />
-            <h2 className="text-base font-bold text-[#2D2D2D]">
-              角色扮演练习
-            </h2>
+            <h2 className="text-base font-bold text-[#2D2D2D]">角色扮演练习</h2>
           </div>
           <p className="text-xs text-gray-600 leading-relaxed mb-4">
             读《正面管教》时，让 AI 扮演一个哭闹的 5
             岁孩子，你试着用书中的方法回应。AI 会给你实时反馈。
           </p>
-          <div className="flex gap-3">
+          <div className="flex gap-3 mb-4">
             <div className="flex-1 bg-white rounded-xl p-3 text-center">
               <User size={20} className="text-[#C9A961] mx-auto mb-1" />
               <p className="text-[11px] text-gray-500">你</p>
@@ -272,15 +346,157 @@ export default function ReadingTogetherPage() {
               <p className="text-xs font-bold text-[#2D2D2D]">5 岁孩子</p>
             </div>
           </div>
+          <button
+            onClick={() => {
+              setChatOpen(true);
+              setMessages([
+                {
+                  role: "assistant",
+                  content:
+                    "你好，我是你的孩子。我今天不想写作业，我想玩游戏！（哭）\n\n你会怎么回应我？试试用《正面管教》里学到的方法。",
+                },
+              ]);
+            }}
+            className="w-full py-2.5 rounded-xl bg-white border border-[#E85D04]/30 text-[#E85D04] text-sm font-medium flex items-center justify-center gap-2"
+          >
+            <Sparkles size={16} />
+            开始角色扮演
+          </button>
         </div>
       </section>
 
+      {/* 聊天弹窗 */}
+      {chatOpen && (
+        <div className="fixed inset-0 bg-black/40 z-50 flex items-end sm:items-center justify-center">
+          <div className="bg-white w-full max-w-lg sm:rounded-2xl rounded-t-2xl h-[80vh] sm:h-[600px] flex flex-col overflow-hidden">
+            {/* 头部 */}
+            <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#E85D04] to-[#C9A961] flex items-center justify-center">
+                  <Bot size={16} className="text-white" />
+                </div>
+                <div>
+                  <p className="text-sm font-bold text-[#2D2D2D]">安心</p>
+                  <p className="text-[10px] text-gray-400">AI 共读伴侣</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setChatOpen(false)}
+                className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center"
+              >
+                <X size={16} />
+              </button>
+            </div>
+
+            {/* 消息列表 */}
+            <div
+              ref={scrollRef}
+              className="flex-1 overflow-y-auto px-4 py-4 space-y-4"
+            >
+              {messages.length === 0 && (
+                <div className="text-center py-8">
+                  <Bot size={40} className="text-[#C9A961] mx-auto mb-3" />
+                  <p className="text-sm text-gray-400">
+                    点击下方按钮开始对话
+                  </p>
+                </div>
+              )}
+              {messages.map((msg, i) => (
+                <div
+                  key={i}
+                  className={`flex gap-2 ${
+                    msg.role === "user" ? "flex-row-reverse" : ""
+                  }`}
+                >
+                  <div
+                    className={`w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 ${
+                      msg.role === "user"
+                        ? "bg-[#E85D04]"
+                        : "bg-gradient-to-br from-[#E85D04] to-[#C9A961]"
+                    }`}
+                  >
+                    {msg.role === "user" ? (
+                      <User size={14} className="text-white" />
+                    ) : (
+                      <Bot size={14} className="text-white" />
+                    )}
+                  </div>
+                  <div
+                    className={`max-w-[80%] rounded-2xl px-3 py-2 text-sm leading-relaxed ${
+                      msg.role === "user"
+                        ? "bg-[#E85D04] text-white rounded-tr-sm"
+                        : "bg-[#FAF7F2] text-[#4A4A4A] rounded-tl-sm"
+                    }`}
+                  >
+                    {msg.content}
+                    {msg.toolCard && (
+                      <div className="mt-2 pt-2 border-t border-[#C9A961]/20">
+                        <p className="text-[10px] text-[#C9A961]">
+                          📖 {msg.toolCard.name} {msg.toolCard.page}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ))}
+              {loading && (
+                <div className="flex gap-2">
+                  <div className="w-7 h-7 rounded-full bg-gradient-to-br from-[#E85D04] to-[#C9A961] flex items-center justify-center">
+                    <Bot size={14} className="text-white" />
+                  </div>
+                  <div className="bg-[#FAF7F2] rounded-2xl rounded-tl-sm px-3 py-2">
+                    <Loader2 size={16} className="text-[#C9A961] animate-spin" />
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* 输入框 */}
+            <div className="px-4 py-3 border-t border-gray-100 bg-white">
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  onKeyDown={handleKeyDown}
+                  placeholder="问安心一个问题..."
+                  className="flex-1 px-3 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-[#E85D04]/30"
+                />
+                <button
+                  onClick={handleSend}
+                  disabled={!input.trim() || loading}
+                  className="w-10 h-10 rounded-xl bg-[#E85D04] text-white flex items-center justify-center disabled:opacity-50"
+                >
+                  <Send size={16} />
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* 底部 CTA */}
-      <div className="sticky bottom-0 -mx-5 px-5 py-3 bg-white/90 backdrop-blur border-t border-[#C9A961]/10">
-        <button className="w-full py-3 rounded-xl bg-[#E85D04] text-white text-sm font-medium shadow-sm">
-          开始 AI 共读
-        </button>
-      </div>
+      {!chatOpen && (
+        <div className="sticky bottom-0 -mx-5 px-5 py-3 bg-white/90 backdrop-blur border-t border-[#C9A961]/10">
+          <button
+            onClick={() => {
+              setChatOpen(true);
+              if (messages.length === 0) {
+                setMessages([
+                  {
+                    role: "assistant",
+                    content:
+                      "你好！我是安心，今天我们一起读《在远远的背后带领》。\n\n你可以问我任何问题，或者告诉我你最近在育儻中遇到的困扰。",
+                  },
+                ]);
+              }
+            }}
+            className="w-full py-3 rounded-xl bg-[#E85D04] text-white text-sm font-medium shadow-sm"
+          >
+            开始 AI 共读
+          </button>
+        </div>
+      )}
     </main>
   );
 }
