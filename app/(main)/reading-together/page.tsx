@@ -150,6 +150,25 @@ export default function ReadingTogetherPage() {
     ]);
   };
 
+  // 禁用背景滚动当弹窗打开
+  useEffect(() => {
+    if (chatOpen) {
+      const scrollY = window.scrollY;
+      document.body.style.overflow = "hidden";
+      document.body.dataset.scrollY = String(scrollY);
+    } else {
+      document.body.style.overflow = "";
+      const scrollY = document.body.dataset.scrollY;
+      if (scrollY) {
+        window.scrollTo(0, parseInt(scrollY));
+        delete document.body.dataset.scrollY;
+      }
+    }
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [chatOpen]);
+
   return (
     <main className="min-h-screen bg-[#FAF7F2] px-5 pt-8 pb-12">
       {/* 顶部 */}
@@ -367,10 +386,12 @@ export default function ReadingTogetherPage() {
 
       {/* 聊天弹窗 */}
       {chatOpen && (
-        <div className="fixed inset-0 bg-black/40 z-50 flex items-end sm:items-center justify-center">
-          <div className="bg-white w-full max-w-lg sm:rounded-2xl rounded-t-2xl h-[80vh] sm:h-[600px] flex flex-col overflow-hidden">
+        <div className="fixed inset-0 bg-black/40 z-50 flex items-end sm:items-center justify-center"
+             style={{ touchAction: 'manipulation' }}>
+          <div className="bg-white w-full max-w-lg sm:rounded-2xl rounded-t-2xl h-[85dvh] sm:h-[600px] flex flex-col overflow-hidden"
+               style={{ maxHeight: 'calc(100dvh - 20px)' }}>
             {/* 头部 */}
-            <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
+            <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 shrink-0">
               <div className="flex items-center gap-2">
                 <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#E85D04] to-[#C9A961] flex items-center justify-center">
                   <Bot size={16} className="text-white" />
@@ -382,7 +403,8 @@ export default function ReadingTogetherPage() {
               </div>
               <button
                 onClick={() => setChatOpen(false)}
-                className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center"
+                className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center active:bg-gray-200"
+                style={{ touchAction: 'manipulation' }}
               >
                 <X size={16} />
               </button>
@@ -391,7 +413,7 @@ export default function ReadingTogetherPage() {
             {/* 消息列表 */}
             <div
               ref={scrollRef}
-              className="flex-1 overflow-y-auto px-4 py-4 space-y-4"
+              className="flex-1 overflow-y-auto px-4 py-4 space-y-4 min-h-0"
             >
               {messages.length === 0 && (
                 <div className="text-center py-8">
@@ -452,7 +474,8 @@ export default function ReadingTogetherPage() {
             </div>
 
             {/* 输入框 */}
-            <div className="px-4 py-3 border-t border-gray-100 bg-white">
+            <div className="px-4 py-3 border-t border-gray-100 bg-white shrink-0"
+                 style={{ paddingBottom: 'max(12px, env(safe-area-inset-bottom))' }}>
               <div className="flex gap-2">
                 <input
                   type="text"
@@ -460,12 +483,16 @@ export default function ReadingTogetherPage() {
                   onChange={(e) => setInput(e.target.value)}
                   onKeyDown={handleKeyDown}
                   placeholder="问安心一个问题..."
-                  className="flex-1 px-3 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-[#E85D04]/30"
+                  autoComplete="off"
+                  inputMode="text"
+                  className="flex-1 px-3 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-[#E85D04]/30 min-w-0"
+                  style={{ touchAction: 'manipulation' }}
                 />
                 <button
                   onClick={handleSend}
                   disabled={!input.trim() || loading}
-                  className="w-10 h-10 rounded-xl bg-[#E85D04] text-white flex items-center justify-center disabled:opacity-50"
+                  className="w-10 h-10 rounded-xl bg-[#E85D04] text-white flex items-center justify-center disabled:opacity-50 shrink-0 active:bg-[#d45404]"
+                  style={{ touchAction: 'manipulation' }}
                 >
                   <Send size={16} />
                 </button>
