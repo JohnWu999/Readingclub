@@ -2,12 +2,13 @@
 
 import { usePathname } from "next/navigation";
 import Link from "next/link";
-import { BookOpen, Heart, CheckCircle, User } from "lucide-react";
+import { BookOpen, Heart, CheckCircle, User, Sparkles, Baby } from "lucide-react";
 
 const tabs = [
   { name: "书架", href: "/", icon: BookOpen },
+  { name: "AI共读", href: "/reading-together", icon: Sparkles },
+  { name: "孩子", href: "/child", icon: Baby },
   { name: "疗愈", href: "/healing", icon: Heart },
-  { name: "打卡", href: "/me/checkin", icon: CheckCircle },
   { name: "我的", href: "/me", icon: User },
 ];
 
